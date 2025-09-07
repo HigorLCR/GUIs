@@ -94,14 +94,14 @@ int main (int argc, char* args[])
                         break;
                 }
             } 
-            //triangulo mouse
-           else if (evt.type == SDL_MOUSEBUTTONDOWN) {                
-                triClica_x1 = evt.button.x;
-                triClica_y1 = evt.button.y;
-                triClica_x2 = evt.button.x + 10;
-                triClica_y2 = evt.button.y;
-                triClica_x3 = evt.button.x + 5;
-                triClica_y3 = evt.button.y + 10;   
+            else if (evt.type == SDL_MOUSEMOTION) {
+                //triangulo mouse
+                triClica_x1 = evt.motion.x;
+                triClica_y1 = evt.motion.y;
+                triClica_x2 = evt.motion.x + 10;
+                triClica_y2 = evt.motion.y;
+                triClica_x3 = evt.motion.x + 5;
+                triClica_y3 = evt.motion.y + 10;   
             }
             else if (evt.type == SDL_QUIT) {
                 isRuning = 0;
