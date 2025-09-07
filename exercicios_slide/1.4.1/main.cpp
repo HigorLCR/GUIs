@@ -13,7 +13,7 @@ int main (int argc, char* args[])
 
     /* EXECUÇÃO */
     int rx = 0, ry = 0, quadrados = 0;
-    SDL_Rect
+
     SDL_Rect r = { 40,20, 10,10 }, r2 = {0, 0, 10, 10};
     int isRuning = 1;
     SDL_Event evt;
