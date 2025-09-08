@@ -2,6 +2,18 @@
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <string>
 
+int AUX_WaitEventTimeoutCount(SDL_Event* evt, Uint32* ms) {
+    Uint32 start = SDL_GetTicks();
+    int isevt = SDL_WaitEventTimeout(evt, *ms);
+    Uint32 end = SDL_GetTicks();
+    if (isevt) {
+        *ms -= (end - start);
+    } else {
+        *ms = 50;
+    }
+    return isevt;
+}
+
 void draw_person(SDL_Renderer* renderer,int x,int y, bool isArmUp=false) {
     // Pernas
     SDL_RenderDrawLine(renderer, x, y + 10, x - 10, y + 20);
@@ -53,6 +65,9 @@ int main( int argc, char* args[] )
     SDL_Init(SDL_INIT_VIDEO);
     int TAMANHO_X = 500;
     int TAMANHO_Y = 500;
+    int isRuning = 1;
+    Uint32& timeout = *(new Uint32(50));
+
     // Criando a janela
     SDL_Window* window = SDL_CreateWindow("Pintura formas", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, TAMANHO_X, TAMANHO_Y, SDL_WINDOW_SHOWN);
     // Criando o renderizador
@@ -68,7 +83,8 @@ int main( int argc, char* args[] )
     float x_pessoa_3 = 100, y_pessoa_3 = 170;
     float tirolesa_x = 110, tirolesa_y = 155; 
     bool braco_pessoa_3 = true;
-    std::string estado = "tirolesa"; // "tirolesa", "caindo", "nadando", "subindo"
+    std::string estado_pessoa = "tirolesa"; // "tirolesa", "caindo", "nadando", "escada"
+    std::string estado_tirolesa = "ocupada"; // "pronta", "ocupada", "indisponivel"
     Sint16 vento_x_1[4] = {200, 250, 300, 350}, vento_x_2[4] = {170, 200, 230, 260};
     Sint16 vento_y_1[4] = {100, 50, 150, 100}, vento_y_2[4] = {120, 90, 150, 120};
 
@@ -81,7 +97,7 @@ int main( int argc, char* args[] )
     //roundedBoxColor(renderer, 350, 300, 450, 380, 30, 0xFFFFFF00); // retângulo amarelo com cantos arredondados
     //pixelColor(renderer, 490, 490, 0xFFFFFFFF); // pixel branco no canto inferior direito
 
-    while (true) {
+    while (isRuning == 1) {
         // Setando a cor de desenho para azul
         SDL_SetRenderDrawColor(renderer, 50, 200, 235, 0);
         SDL_RenderClear(renderer);
@@ -143,49 +159,96 @@ int main( int argc, char* args[] )
         draw_fish(renderer, 150, 450);
         draw_fish(renderer, 300, 470);
 
+        SDL_RenderPresent(renderer);
+        SDL_Event evt;
 
-        if (estado == "tirolesa") {
-            //desce tirolesa
-            x_pessoa_3 = x_pessoa_3 + 5;
-            y_pessoa_3 = y_pessoa_3 + 2;
+        int isevt = AUX_WaitEventTimeoutCount(&evt, &timeout);
 
-            tirolesa_x = tirolesa_x + 5;
-            tirolesa_y = tirolesa_y + 2;
+        if (isevt) {
+            if (evt.type == SDL_KEYDOWN) {
+                switch (evt.key.keysym.sym) {
+                    case SDLK_UP:
+                        if (estado_pessoa == "escada") {
+                            //sobe a escada
+                            y_pessoa_3 = y_pessoa_3 - 10;
+                            braco_pessoa_3 = true;
 
-            if (x_pessoa_3 >= 390) {
-                estado = "caindo";
+                            if (y_pessoa_3 <= 170 && estado_tirolesa == "pronta") {
+                                estado_pessoa = "tirolesa";
+                                estado_tirolesa = "ocupada";
+                            }
+                        }
+                        break;
+                    case SDLK_DOWN:
+                        if (estado_pessoa == "escada") {
+                            //sobe a escada
+                            y_pessoa_3 = y_pessoa_3 + 10;
+                            braco_pessoa_3 = true;
+                                        
+                            if (y_pessoa_3 >= 410) {
+                                estado_pessoa = "nadando";
+                            }
+                        }
+                        break;
+                    case SDLK_LEFT:
+                        if (estado_pessoa == "nadando") {
+                            //nada de volta
+                            x_pessoa_3 = x_pessoa_3 - 5;
+                            braco_pessoa_3 = false;
+
+                            if (x_pessoa_3 <= 100) {
+                                estado_pessoa = "escada";
+                            }
+                        }
+                        break;
+                    case SDLK_RIGHT:
+                        if (estado_pessoa == "nadando") {
+                            //nada de volta
+                            x_pessoa_3 = x_pessoa_3 + 5;
+                            braco_pessoa_3 = false;
+                        }
+                        break;
+                }
+            } else if (evt.type == SDL_MOUSEMOTION) {
+
+            } 
+            else if (evt.type == SDL_QUIT) {
+                isRuning = 0;
             }
-        } else if (estado == "caindo") {
-            //cai na água
-            braco_pessoa_3 = false;
-            y_pessoa_3 = y_pessoa_3 + 10;
+        } else {
+            if (estado_pessoa == "tirolesa") {
+                //desce tirolesa
+                x_pessoa_3 = x_pessoa_3 + 5;
+                y_pessoa_3 = y_pessoa_3 + 2;
+                
+                tirolesa_x = tirolesa_x + 5;
+                tirolesa_y = tirolesa_y + 2;
+                
+                if (x_pessoa_3 >= 390) {
+                    estado_pessoa = "caindo";
+                }
+            } else if (estado_pessoa == "caindo") {
+                //cai na água
+                
+                braco_pessoa_3 = false;
+                y_pessoa_3 = y_pessoa_3 + 10;
+            
+                if (y_pessoa_3 >= 410) {
+                    estado_pessoa = "nadando";
+                }
+                if (estado_tirolesa == "ocupada") {
+                    estado_tirolesa = "indisponivel";
+                }
+            } 
+            if (estado_tirolesa == "indisponivel") {
+                tirolesa_x = tirolesa_x - 5;
+                tirolesa_y = tirolesa_y - 2;
 
-            if (y_pessoa_3 >= 410) {
-                estado = "nadando";
-            }
-        } else if (estado == "nadando") {
-            //nada de volta
-            x_pessoa_3 = x_pessoa_3 - 5;
-            braco_pessoa_3 = false;
-
-            tirolesa_x = tirolesa_x - 5;
-            tirolesa_y = tirolesa_y - 2;
-
-            if (x_pessoa_3 <= 100) {
-                estado = "subindo";
-            }
-        } else if (estado == "subindo") {
-            //sobe a escada
-            y_pessoa_3 = y_pessoa_3 - 10;
-            braco_pessoa_3 = true;
-
-            if (y_pessoa_3 <= 170) {
-                estado = "tirolesa";
+                if (tirolesa_x <= 110) {
+                    estado_tirolesa = "pronta";
+                }
             }
         }
-          
-        SDL_RenderPresent(renderer);
-        SDL_Delay(50);
     }
     
     SDL_DestroyRenderer(renderer);
