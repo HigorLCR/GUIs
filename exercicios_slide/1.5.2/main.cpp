@@ -3,14 +3,14 @@
 #include <string>
 
 int AUX_WaitEventTimeoutCount(SDL_Event* evt, Uint32* ms) {
+
     Uint32 start = SDL_GetTicks();
     int isevt = SDL_WaitEventTimeout(evt, *ms);
     Uint32 end = SDL_GetTicks();
     if (isevt) {
         *ms -= (end - start);
-    } else {
-        *ms = 500;
     }
+
     return isevt;
 }
 

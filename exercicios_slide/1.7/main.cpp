@@ -7,8 +7,14 @@
 using namespace std;
 
 int AUX_WaitEventTimeoutCount(SDL_Event* evt, Uint32* ms) {
+
+    Uint32 start = SDL_GetTicks();
     int isevt = SDL_WaitEventTimeout(evt, *ms);
-    
+    Uint32 end = SDL_GetTicks();
+    if (isevt) {
+        *ms -= (end - start);
+    }
+
     return isevt;
 }
 
@@ -54,7 +60,7 @@ int main( int argc, char* args[] )
     int TAMANHO_X = 500;
     int TAMANHO_Y = 500;
     int isRuning = 1;
-    Uint32& timeout = *(new Uint32(50));
+    Uint32 timeout = 100;
 
     // Criando a janela
     SDL_Window* window = SDL_CreateWindow("Pintura formas", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, TAMANHO_X, TAMANHO_Y, SDL_WINDOW_SHOWN);
@@ -192,8 +198,6 @@ int main( int argc, char* args[] )
             else if (evt.type == SDL_QUIT) {
                 isRuning = 0;
             }
-            Uint32 end = SDL_GetTicks();
-            timeout -= (end - start);
         } else {
             if (estado_pessoa == "tirolesa") {
                 //desce tirolesa
@@ -226,7 +230,7 @@ int main( int argc, char* args[] )
                     estado_tirolesa = "pronta";
                 }
             }
-            timeout = 50;
+            timeout = 100;
         }
     }
     
