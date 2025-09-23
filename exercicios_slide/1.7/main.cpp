@@ -11,8 +11,10 @@ int AUX_WaitEventTimeoutCount(SDL_Event* evt, Uint32* ms) {
     Uint32 start = SDL_GetTicks();
     int isevt = SDL_WaitEventTimeout(evt, *ms);
     Uint32 end = SDL_GetTicks();
-    if (isevt) {
-        *ms -= (end - start);
+    if (isevt)
+    {
+        Uint32 delta = (end > start) ? (end - start) : 1;
+        *ms = (*ms > delta) ? (*ms - delta) : 0;
     }
 
     return isevt;
@@ -63,24 +65,33 @@ int main( int argc, char* args[] )
     Uint32 timeout = 100;
 
     // Criando a janela
-    SDL_Window* window = SDL_CreateWindow("Pintura formas", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, TAMANHO_X, TAMANHO_Y, SDL_WINDOW_SHOWN);
+    SDL_Window *window = SDL_CreateWindow(
+        "Pintura formas",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        TAMANHO_X,
+        TAMANHO_Y,
+        SDL_WINDOW_SHOWN);
     // Criando o renderizador
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    
-    
-    SDL_Rect chao_1  = { 0, (TAMANHO_Y / 3), 70, TAMANHO_Y }, chao_2 = { 4*(TAMANHO_X / 5), 2*(TAMANHO_Y / 3), TAMANHO_X, TAMANHO_Y };
-    SDL_Rect grama_1 = { 0, (TAMANHO_Y / 3)- 10, 70, 10}, grama_2 = { 4*(TAMANHO_X / 5), 2*(TAMANHO_Y / 3) - 10, TAMANHO_X, 10 };
-    SDL_Rect mar = { 70, 4*(TAMANHO_Y / 5), 4*(TAMANHO_X / 5) - 70, TAMANHO_Y/5 };
-    SDL_Rect poste_1 = { 30, (TAMANHO_Y / 3)- 65, 10, 55 }, poste_2 = { 4*(TAMANHO_X / 5) + 30, 2*(TAMANHO_Y / 3)- 65, 10, 55 };
-    float tirolesa_x = 110, tirolesa_y = 155; 
-    std::string estado_pessoa = "tirolesa"; // "tirolesa", "caindo", "nadando", "escada"
+    SDL_Renderer *renderer = SDL_CreateRenderer(
+        window,
+        -1,
+        0
+    );
+
+    SDL_Rect chao_1 = {0, (TAMANHO_Y / 3), 70, TAMANHO_Y}, chao_2 = {4 * (TAMANHO_X / 5), 2 * (TAMANHO_Y / 3), TAMANHO_X, TAMANHO_Y};
+    SDL_Rect grama_1 = {0, (TAMANHO_Y / 3) - 10, 70, 10}, grama_2 = {4 * (TAMANHO_X / 5), 2 * (TAMANHO_Y / 3) - 10, TAMANHO_X, 10};
+    SDL_Rect mar = {70, 4 * (TAMANHO_Y / 5), 4 * (TAMANHO_X / 5) - 70, TAMANHO_Y / 5};
+    SDL_Rect poste_1 = {30, (TAMANHO_Y / 3) - 65, 10, 55}, poste_2 = {4 * (TAMANHO_X / 5) + 30, 2 * (TAMANHO_Y / 3) - 65, 10, 55};
+    float tirolesa_x = 110, tirolesa_y = 155;
+    std::string estado_pessoa = "tirolesa";  // "tirolesa", "caindo", "nadando", "escada"
     std::string estado_tirolesa = "ocupada"; // "pronta", "ocupada", "indisponivel"
     Sint16 vento_x_1[4] = {200, 250, 300, 350}, vento_x_2[4] = {170, 200, 230, 260};
     Sint16 vento_y_1[4] = {100, 50, 150, 100}, vento_y_2[4] = {120, 90, 150, 120};
-    
+
     int x_pinguim = 73, y_pinguim = 155;
-    SDL_Texture* pinguim_acenando = IMG_LoadTexture(renderer, "./imgs/acenando.webp");
-    SDL_Texture* pinguim_caindo = IMG_LoadTexture(renderer, "./imgs/caindo.webp");
+    SDL_Texture *pinguim_acenando = IMG_LoadTexture(renderer, "./imgs/acenando.webp");
+    SDL_Texture *pinguim_caindo = IMG_LoadTexture(renderer, "./imgs/caindo.webp");
     assert(pinguim_acenando != NULL);
     assert(pinguim_caindo != NULL);
     
@@ -89,9 +100,9 @@ int main( int argc, char* args[] )
         // Setando a cor de desenho para azul
         SDL_SetRenderDrawColor(renderer, 50, 200, 235, 0);
         SDL_RenderClear(renderer);
-        
-        //chão e grama
-        SDL_SetRenderDrawColor(renderer, 85, 38, 23, 0); 
+
+        // chão e grama
+        SDL_SetRenderDrawColor(renderer, 85, 38, 23, 0);
         SDL_RenderFillRect(renderer, &chao_2);
         SDL_RenderFillRect(renderer, &chao_1);
 
@@ -99,100 +110,95 @@ int main( int argc, char* args[] )
         SDL_RenderFillRect(renderer, &grama_1);
         SDL_RenderFillRect(renderer, &grama_2);
 
-        //escada
+        // escada
         draw_ladder(renderer, 100, 150);
         draw_ladder(renderer, 100, 200);
         draw_ladder(renderer, 100, 250);
         draw_ladder(renderer, 100, 300);
         draw_ladder(renderer, 100, 350);
 
-        
-        //postes
+        // postes
         SDL_SetRenderDrawColor(renderer, 100, 65, 200, 0);
         SDL_RenderFillRect(renderer, &poste_1);
         SDL_RenderFillRect(renderer, &poste_2);
 
-        //mar
+        // mar
         SDL_SetRenderDrawColor(renderer, 0, 0, 255, 0);
         SDL_RenderFillRect(renderer, &mar);
         draw_waves(renderer, 100, 410);
-    
 
-        //tirolesa
+        // tirolesa
         arcColor(renderer, 1080, -1850, 2225, 107, 118, 0xFF40403F);
         filledCircleColor(renderer, tirolesa_x, tirolesa_y, 5, 0xFF0000FF);
         filledCircleColor(renderer, tirolesa_x, tirolesa_y, 2, 0xFF111111);
 
-        //vento
+        // vento
         bezierColor(renderer, vento_x_1, vento_y_1, 4, 100, 0xFFFFFFFF);
         bezierColor(renderer, vento_x_2, vento_y_2, 4, 100, 0xFFFFFFFF);
 
-        //sol
-        filledCircleColor(renderer, 420, 80, 40, 0xFF00FFFF); 
+        // sol
+        filledCircleColor(renderer, 420, 80, 40, 0xFF00FFFF);
 
-        //nuvens
+        // nuvens
         draw_cloud(renderer, 100, 50);
         draw_cloud(renderer, 250, 30);
 
-        //bandeira
+        // bandeira
         thickLineColor(renderer, 480, 200, 480, 320, 6, 0xFFAAAAAA);
         filledTrigonColor(renderer, 477, 200, 450, 210, 477, 220, 0xFF0000FF);
 
-        //peixes
+        // peixes
         draw_fish(renderer, 150, 450);
         draw_fish(renderer, 300, 470);
 
-        //pessoas
+        // pessoas
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
         draw_penguin(renderer, (estado_pessoa == "tirolesa" ? pinguim_acenando : pinguim_caindo), x_pinguim, y_pinguim);
 
-        
         SDL_RenderPresent(renderer);
         SDL_Event evt;
 
-        Uint32 start = SDL_GetTicks();
         int isevt = AUX_WaitEventTimeoutCount(&evt, &timeout);
-        if (evt.type == SDL_MOUSEMOTION) continue;
         if (isevt) {
             if (evt.type == SDL_KEYDOWN) {
                 switch (evt.key.keysym.sym) {
-                    case SDLK_UP:
-                        if (estado_pessoa == "escada") {
-                            //sobe a escada
-                            y_pinguim = y_pinguim - 10;
+                case SDLK_UP:
+                    if (estado_pessoa == "escada") {
+                        // sobe a escada
+                        y_pinguim = y_pinguim - 10;
 
-                            if (y_pinguim <= 155 && estado_tirolesa == "pronta") {
-                                estado_pessoa = "tirolesa";
-                                estado_tirolesa = "ocupada";
-                            }
+                        if (y_pinguim <= 155 && estado_tirolesa == "pronta") {
+                            estado_pessoa = "tirolesa";
+                            estado_tirolesa = "ocupada";
                         }
-                        break;
-                    case SDLK_DOWN:
-                        if (estado_pessoa == "escada") {
-                            //sobe a escada
-                            y_pinguim = y_pinguim + 10;
-                                        
-                            if (y_pinguim >= 410) {
-                                estado_pessoa = "nadando";
-                            }
-                        }
-                        break;
-                    case SDLK_LEFT:
-                        if (estado_pessoa == "nadando") {
-                            //nada de volta
-                            x_pinguim = x_pinguim - 5;
+                    }
+                    break;
+                case SDLK_DOWN:
+                    if (estado_pessoa == "escada") {
+                        // sobe a escada
+                        y_pinguim = y_pinguim + 10;
 
-                            if (x_pinguim <= 73) {
-                                estado_pessoa = "escada";
-                            }
+                        if (y_pinguim >= 410) {
+                            estado_pessoa = "nadando";
                         }
-                        break;
-                    case SDLK_RIGHT:
-                        if (estado_pessoa == "nadando") {
-                            //nada de volta
-                            x_pinguim = x_pinguim + 5;
+                    }
+                    break;
+                case SDLK_LEFT:
+                    if (estado_pessoa == "nadando") {
+                        // nada de volta
+                        x_pinguim = x_pinguim - 5;
+
+                        if (x_pinguim <= 73) {
+                            estado_pessoa = "escada";
                         }
-                        break;
+                    }
+                    break;
+                case SDLK_RIGHT:
+                    if (estado_pessoa == "nadando") {
+                        // nada de volta
+                        x_pinguim = x_pinguim + 5;
+                    }
+                    break;
                 }
             }
             else if (evt.type == SDL_QUIT) {
@@ -200,28 +206,30 @@ int main( int argc, char* args[] )
             }
         } else {
             if (estado_pessoa == "tirolesa") {
-                //desce tirolesa
+                // desce tirolesa
                 x_pinguim = x_pinguim + 5;
                 y_pinguim = y_pinguim + 2;
-                
+
                 tirolesa_x = tirolesa_x + 5;
                 tirolesa_y = tirolesa_y + 2;
-                
+
                 if (x_pinguim >= 350) {
                     estado_pessoa = "caindo";
                 }
-            } else if (estado_pessoa == "caindo") {
-                //cai na água
-                
+            }
+            else if (estado_pessoa == "caindo")
+            {
+                // cai na água
+
                 y_pinguim = y_pinguim + 10;
-            
+
                 if (y_pinguim >= 410) {
                     estado_pessoa = "nadando";
                 }
                 if (estado_tirolesa == "ocupada") {
                     estado_tirolesa = "indisponivel";
                 }
-            } 
+            }
             if (estado_tirolesa == "indisponivel") {
                 tirolesa_x = tirolesa_x - 5;
                 tirolesa_y = tirolesa_y - 2;
@@ -233,12 +241,12 @@ int main( int argc, char* args[] )
             timeout = 100;
         }
     }
-    
+
     SDL_DestroyTexture(pinguim_acenando);
     SDL_DestroyTexture(pinguim_caindo);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
-    
+
     return 0;
 }

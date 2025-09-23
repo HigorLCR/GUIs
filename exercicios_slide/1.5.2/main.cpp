@@ -7,8 +7,10 @@ int AUX_WaitEventTimeoutCount(SDL_Event* evt, Uint32* ms) {
     Uint32 start = SDL_GetTicks();
     int isevt = SDL_WaitEventTimeout(evt, *ms);
     Uint32 end = SDL_GetTicks();
-    if (isevt) {
-        *ms -= (end - start);
+    if (isevt)
+    {
+        Uint32 delta = (end > start) ? (end - start) : 1;
+        *ms = (*ms > delta) ? (*ms - delta) : 0;
     }
 
     return isevt;
@@ -19,7 +21,7 @@ int main (int argc, char* args[])
     /* VARIAVEIS */
     int largura = 200, altura = 200;
     int rx = 0, ry = 0, quadrados = 0;
-    Uint32& timeout = *(new Uint32(500));
+    Uint32 timeout = 500;
 
     SDL_Rect r = { 40,20, 10,10 }, r2 = {0, 0, 10, 10};
     int triClica_x1 = 0, triClica_y1 = 0, triClica_x2 = 10, triClica_y2 = 0, triClica_x3 = 5, triClica_y3 = 10;
@@ -31,12 +33,19 @@ int main (int argc, char* args[])
 
     /* INICIALIZACAO */
     SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_Window* win = SDL_CreateWindow("Movendo triangulos",
-                         SDL_WINDOWPOS_UNDEFINED,
-                         SDL_WINDOWPOS_UNDEFINED,
-                         largura, altura, SDL_WINDOW_SHOWN
-                      );
-    SDL_Renderer* ren = SDL_CreateRenderer(win, -1, 0);
+    SDL_Window* win = SDL_CreateWindow(
+        "Movendo triangulos",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        largura, 
+        altura, 
+        SDL_WINDOW_SHOWN
+    );
+    SDL_Renderer* ren = SDL_CreateRenderer(
+        win, 
+        -1, 
+        0
+    );
 
     /* EXECUÇÃO */
     while (isRuning == 1) {
@@ -66,7 +75,6 @@ int main (int argc, char* args[])
         );
         
         SDL_RenderPresent(ren);
-        
         SDL_Event evt;
 
         int isevt = AUX_WaitEventTimeoutCount(&evt, &timeout);
