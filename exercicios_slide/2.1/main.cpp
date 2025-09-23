@@ -1,68 +1,119 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <assert.h>
 #include <iostream>
 
-// typedef struct SDL_CliqueTriplo
-// {
-    // Uint32 type;        /**< SDL_USEREVENT through SDL_LASTEVENT-1 */
-    // Uint32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
-    // Uint32 windowID;    /**< The associated window if any */
-    // Sint32 code;        /**< User defined event code */
-    // void *data1;        /**< User defined data pointer */
-    // void *data2;        /**< User defined data pointer */
-// } SDL_UserEvent;
+enum CustomEventCodes {
+    EVENT_TIME_EXPIRE = 0,
+    EVENT_MULTI_CLICK = 1 //1 ate N
+};
 
-int AUX_WaitEventTimeoutCount(SDL_Event* evt, Uint32* ms) {
+SDL_Event CreateUserEvent(int code) {
+    SDL_Event user_event;
+    user_event.type = SDL_USEREVENT;
+    user_event.user.code = code;
 
-    Uint32 start = SDL_GetTicks();
-    int isevt = SDL_WaitEventTimeout(evt, *ms);
-    Uint32 end = SDL_GetTicks();
-    if (isevt)
-    {
-        Uint32 delta = (end > start) ? (end - start) : 1;
-        *ms = (*ms > delta) ? (*ms - delta) : 0;
-    }
-
-    return isevt;
+    return user_event;
 }
 
-int main(int argc, char* args[]) {
-    //VAR
-    int isRunning = 1, largura = 1000, altura = 1000;
-    Uint32 timeout = 100;
-    Uint32 CLIQUE_TRIPLO{SDL_RegisterEvents(1)};
-    SDL_Event MeuEvento{CLIQUE_TRIPLO};
-    SDL_PushEvent(&MeuEvento);
+void draw_penguin(SDL_Renderer* renderer,SDL_Texture* img, int x_pinguim, int y_pinguim) {
+    SDL_Rect pinguim = {x_pinguim, y_pinguim, 50, 50};
 
-    //EXEC
-    SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_Window* win = SDL_CreateWindow("Clique triplo",
-       SDL_WINDOWPOS_UNDEFINED,
-       SDL_WINDOWPOS_UNDEFINED,
-       largura, altura, SDL_WINDOW_SHOWN
+    SDL_RenderCopy(renderer, img, NULL, &pinguim);
+}
+
+int main (int argc, char* args[]) {
+    int LARGURA = 500, ALTURA = 500;
+    SDL_Init(SDL_INIT_VIDEO);
+    IMG_Init(IMG_INIT_PNG);
+
+    SDL_Window* window = SDL_CreateWindow(
+        "jetpack multiclick",                                 
+        SDL_WINDOWPOS_UNDEFINED, 
+        SDL_WINDOWPOS_UNDEFINED,
+        LARGURA, 
+        ALTURA, 
+        SDL_WINDOW_SHOWN
     );
-    SDL_Renderer* ren = SDL_CreateRenderer(win, -1, 0);
-    //SDL_UserEvent userEvt;
-    
+    SDL_Renderer* renderer = SDL_CreateRenderer(
+        window, 
+        -1, 
+        SDL_RENDERER_ACCELERATED
+    );
 
-    while(isRunning == 1) {
-        SDL_Event evt;
-        int isEvt = SDL_WaitEventTimeout(&evt, timeout);
+    int is_running = 1, click_counter = 0;
+    Uint32 timeout = 200;
+    SDL_Event event;
 
-    
-        if (isEvt) {
-            std::cout << "rolou evento";
-            if (evt.type == SDL_QUIT) {
-                isRunning = 0;
-                SDL_DestroyRenderer(ren);
-                SDL_DestroyWindow(win);
-                SDL_Quit();
-            } else if (evt.type == CLIQUE_TRIPLO) {
-                std::cout << "rolou um clique triplo";
-            } else if ( evt.type == SDL_MOUSEBUTTONUP) {
-                
+    SDL_Rect grama = { 0, ALTURA - 30, LARGURA, 10}, terra = { 0, ALTURA - 20, LARGURA, 20};
+    int X_INICIAL = (LARGURA/2) - 25, Y_INICIAL = ALTURA - 80;
+    int x_pinguim = X_INICIAL, y_pinguim = Y_INICIAL;
+
+    SDL_Texture *pinguim_sentado = IMG_LoadTexture(renderer, "./imgs/sentado.webp");
+    assert(pinguim_sentado != NULL);
+
+    while(is_running) {
+        
+        //ceu
+        SDL_SetRenderDrawColor(renderer, 50, 200, 235, 0);
+        SDL_RenderClear(renderer);
+
+        //chao
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 0);
+        SDL_RenderFillRect(renderer, &grama);
+        SDL_SetRenderDrawColor(renderer, 85, 38, 23, 0);
+        SDL_RenderFillRect(renderer, &terra);
+
+        //pinguim
+        draw_penguin(renderer, pinguim_sentado, x_pinguim, y_pinguim);
+
+        SDL_RenderPresent(renderer);
+        Uint32 start = SDL_GetTicks();
+        if (SDL_WaitEventTimeout(&event, timeout)) {
+            SDL_Event multi_click_event;
+            switch (event.type) {
+                case SDL_QUIT:
+                    is_running = 0;
+                    break;
+
+                case SDL_MOUSEBUTTONDOWN: {
+                    multi_click_event = CreateUserEvent(1);
+                    SDL_PushEvent(&multi_click_event);
+                    break;
+                }
+                case SDL_USEREVENT:
+                    switch (event.user.code) {
+                        case 0:
+                            if (y_pinguim < Y_INICIAL) {
+                                y_pinguim += 5;
+                            }
+                            break;
+                        case 1:
+                            y_pinguim -= 5;
+                            break;
+                    }
+                    timeout = 200;  
+                    break;
+                default:
+                    timeout -= (SDL_GetTicks() - start);
+                    break;
+
             }
+        } else {
+            if (click_counter > 0) {
+                click_counter -= 1;
+            }
+            SDL_Event timeout_event = CreateUserEvent(0);
+            SDL_PushEvent(&timeout_event);
+
+            timeout = 200;
         }
     }
+
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
     return 0;
 }
