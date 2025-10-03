@@ -1,0 +1,8 @@
+O programa renderiza um quadrado roxo no estado 'free' com fundo branco;
+
+Ao clicar no quadrado nada acontece;
+
+Ao clicar no quadrado e segurar o botão do mouse, o quadrado entra no estado 'draging' e segue o mouse;
+
+Ao apertar ESC em qualquer momento da execução do programa, o estado do quadrado volta pra 'free' e o quadrado volta
+para a posição x=0 e y=0;
